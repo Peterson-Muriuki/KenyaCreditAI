@@ -21,7 +21,7 @@ from utils import (
 # Page configuration
 st.set_page_config(
     page_title="KenyaCredit AI",
-    page_icon="🏦",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -58,7 +58,7 @@ if 'model' not in st.session_state:
     st.session_state.trained = False
 
 # Header
-st.markdown('<p class="main-header">🏦 KenyaCredit AI</p>', unsafe_allow_html=True)
+st.markdown('<p class="main-header">KenyaCredit AI</p>', unsafe_allow_html=True)
 st.markdown('<p class="sub-header">Alternative Data Credit Scoring for Financial Inclusion</p>', unsafe_allow_html=True)
 
 # Sidebar
@@ -69,13 +69,13 @@ with st.sidebar:
     
     page = st.radio(
         "Navigation",
-        ["🏠 Home", "📊 Credit Assessment", "📈 Portfolio Analytics", "ℹ️ About"],
+        ["Home", "Credit Assessment", "Portfolio Analytics", "About"],
         label_visibility="collapsed"
     )
     
     st.markdown("---")
     
-    st.markdown("### 🎓 MSCFE Project")
+    st.markdown("### MSCFE Project")
     st.markdown("**Author:** Peterson Mutegi")
     st.markdown("**Modules:**")
     st.markdown("- M1: Credit Risk")
@@ -86,7 +86,7 @@ with st.sidebar:
     st.markdown("---")
     
     # Train model button
-    if st.button("🔄 Train/Retrain Model", use_container_width=True):
+    if st.button("Train/Retrain Model", use_container_width=True):
         with st.spinner("Training model..."):
             # Create sample data
             train_data = create_sample_data(n_samples=500)
@@ -95,30 +95,30 @@ with st.sidebar:
             metrics = st.session_state.model.train(train_data)
             st.session_state.trained = True
             
-            st.success(f"✅ Model trained successfully!")
+            st.success(f"Model trained successfully!")
             st.info(f"Test Accuracy: {metrics['test_accuracy']:.2%}")
 
 # Main content area
-if page == "🏠 Home":
+if page == "Home":
     # Home page
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.markdown("### 🎯 Mission")
+        st.markdown("### Mission")
         st.write("""
         Expand credit access to underbanked Kenyans using innovative 
         alternative data sources combined with traditional credit analysis.
         """)
     
     with col2:
-        st.markdown("### 🔬 Technology")
+        st.markdown("### Technology")
         st.write("""
         Machine learning models trained on traditional financial data plus 
         social media sentiment, Google Trends, and news analysis.
         """)
     
     with col3:
-        st.markdown("### 📊 Impact")
+        st.markdown("### Impact")
         st.write("""
         Reduce default rates by 15-20% while increasing approval rates 
         for creditworthy but data-sparse borrowers.
@@ -144,41 +144,41 @@ if page == "🏠 Home":
     st.markdown("---")
     
     # How it works
-    st.markdown("### 🔄 How It Works")
+    st.markdown("### How It Works")
     
     flow_col1, flow_col2, flow_col3, flow_col4 = st.columns(4)
     
     with flow_col1:
-        st.markdown("#### 1️⃣ Data Collection")
+        st.markdown("#### 1 Data Collection")
         st.write("Gather traditional + alternative data")
     
     with flow_col2:
-        st.markdown("#### 2️⃣ Feature Engineering")
+        st.markdown("#### 2 Feature Engineering")
         st.write("TF-IDF, sentiment analysis, risk indicators")
     
     with flow_col3:
-        st.markdown("#### 3️⃣ ML Prediction")
+        st.markdown("#### 3 ML Prediction")
         st.write("Random Forest model predicts default probability")
     
     with flow_col4:
-        st.markdown("#### 4️⃣ Credit Score")
+        st.markdown("#### 4 Credit Score")
         st.write("Generate 300-850 score + recommendations")
     
     st.markdown("---")
     
     # Sample data view
-    st.markdown("### 📋 Sample Training Data")
+    st.markdown("### Sample Training Data")
     sample_df = create_sample_data(n_samples=10)
     st.dataframe(sample_df, use_container_width=True)
 
-elif page == "📊 Credit Assessment":
-    st.markdown("## 📊 Individual Credit Assessment")
+elif page == "Credit Assessment":
+    st.markdown("## Individual Credit Assessment")
     
     if not st.session_state.trained:
-        st.warning("⚠️ Please train the model first using the sidebar button.")
+        st.warning("Please train the model first using the sidebar button.")
     else:
         # Input form
-        st.markdown("### 👤 Applicant Information")
+        st.markdown("### Applicant Information")
         
         col1, col2 = st.columns(2)
         
@@ -220,7 +220,7 @@ elif page == "📊 Credit Assessment":
         with col2:
             st.markdown("#### Alternative Data")
             
-            st.info("📱 These values are automatically collected from various sources")
+            st.info("These values are automatically collected from various sources")
             
             # Get alternative data
             alt_data = st.session_state.alt_data_collector.get_financial_stress_indicator()
@@ -255,7 +255,7 @@ elif page == "📊 Credit Assessment":
         st.markdown("---")
         
         # Predict button
-        if st.button("🔍 Assess Credit Risk", type="primary", use_container_width=True):
+        if st.button("Assess Credit Risk", type="primary", use_container_width=True):
             # Prepare applicant data
             applicant_data = {
                 'income': income,
