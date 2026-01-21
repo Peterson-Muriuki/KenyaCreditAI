@@ -25,11 +25,11 @@ KenyaCredit AI is an advanced credit scoring system that combines traditional fi
 
 
 ## Features
-- 🎯 Traditional + Alternative Data Credit Scoring
-- 📊 Portfolio Risk Analytics (VaR, Correlation Analysis)
-- 📰 Real-time News Sentiment Analysis
-- 🔍 Google Trends Financial Stress Indicators
-- 📈 Interactive Streamlit Dashboard
+- Traditional + Alternative Data Credit Scoring
+- Portfolio Risk Analytics (VaR, Correlation Analysis)
+- Real-time News Sentiment Analysis
+- Google Trends Financial Stress Indicators
+- Interactive Streamlit Dashboard
 
 ## Tech Stack
 - **Backend:** Python, scikit-learn, pandas, numpy
