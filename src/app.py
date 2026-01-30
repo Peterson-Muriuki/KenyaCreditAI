@@ -8,6 +8,14 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
+import sys
+from pathlib import Path
+
+# Add src directory to path for Streamlit Cloud compatibility
+src_path = Path(__file__).parent
+if str(src_path) not in sys.path:
+    sys.path.insert(0, str(src_path))
+
 from credit_model import CreditScoringModel
 from alt_data import AlternativeDataCollector
 from utils import (
@@ -63,7 +71,7 @@ st.markdown('<p class="sub-header">Alternative Data Credit Scoring for Financial
 
 # Sidebar
 with st.sidebar:
-    st.image("https://via.placeholder.com/300x100/1f77b4/ffffff?text=KenyaCredit+AI", use_container_width=True)
+    st.markdown("### KenyaCredit AI")
     
     st.markdown("---")
     
@@ -86,7 +94,7 @@ with st.sidebar:
     st.markdown("---")
     
     # Train model button
-    if st.button("Train/Retrain Model", use_container_width=True):
+    if st.button("Train/Retrain Model", width="stretch"):
         with st.spinner("Training model..."):
             # Create sample data
             train_data = create_sample_data(n_samples=500)
@@ -169,7 +177,7 @@ if page == "Home":
     # Sample data view
     st.markdown("### Sample Training Data")
     sample_df = create_sample_data(n_samples=10)
-    st.dataframe(sample_df, use_container_width=True)
+    st.dataframe(sample_df, width="stretch")
 
 elif page == "Credit Assessment":
     st.markdown("## Individual Credit Assessment")
@@ -255,7 +263,7 @@ elif page == "Credit Assessment":
         st.markdown("---")
         
         # Predict button
-        if st.button("Assess Credit Risk", type="primary", use_container_width=True):
+        if st.button("Assess Credit Risk", type="primary", width="stretch"):
             # Prepare applicant data
             applicant_data = {
                 'income': income,
@@ -266,3 +274,243 @@ elif page == "Credit Assessment":
                 'google_trends_score': google_trends_score,
                 'news_sentiment': news_sentiment
             }
+            
+            # Get prediction
+            with st.spinner("Analyzing credit risk..."):
+                result = st.session_state.model.predict_score(applicant_data)
+            
+            st.markdown("---")
+            st.markdown("## Credit Assessment Results")
+            
+            # Display results in columns
+            res_col1, res_col2, res_col3 = st.columns(3)
+            
+            with res_col1:
+                st.metric(
+                    "Credit Score",
+                    result['credit_score'],
+                    help="Score range: 300-850"
+                )
+            
+            with res_col2:
+                st.metric(
+                    "Risk Category",
+                    result['risk_category']
+                )
+            
+            with res_col3:
+                st.metric(
+                    "Default Probability",
+                    f"{result['default_probability']:.1%}"
+                )
+            
+            # Credit Score Gauge
+            fig = go.Figure(go.Indicator(
+                mode="gauge+number",
+                value=result['credit_score'],
+                domain={'x': [0, 1], 'y': [0, 1]},
+                title={'text': "Credit Score"},
+                gauge={
+                    'axis': {'range': [300, 850]},
+                    'bar': {'color': get_risk_color(result['risk_category'])},
+                    'steps': [
+                        {'range': [300, 450], 'color': "#ffcccc"},
+                        {'range': [450, 600], 'color': "#ffe6cc"},
+                        {'range': [600, 750], 'color': "#fff5cc"},
+                        {'range': [750, 850], 'color': "#ccffcc"}
+                    ],
+                    'threshold': {
+                        'line': {'color': "black", 'width': 4},
+                        'thickness': 0.75,
+                        'value': result['credit_score']
+                    }
+                }
+            ))
+            fig.update_layout(height=300)
+            st.plotly_chart(fig, width="stretch")
+            
+            # Recommendation
+            st.markdown("### Recommendation")
+            
+            if result['risk_category'] == "Low Risk":
+                st.success(f"Recommended for approval at {result['recommended_interest_rate']:.1f}% interest rate")
+            elif result['risk_category'] == "Medium Risk":
+                st.warning(f"Consider approval with enhanced monitoring at {result['recommended_interest_rate']:.1f}% interest rate")
+            elif result['risk_category'] == "High Risk":
+                st.warning(f"Additional documentation required. If approved: {result['recommended_interest_rate']:.1f}% interest rate")
+            else:
+                st.error("Application declined - very high risk profile")
+
+elif page == "Portfolio Analytics":
+    st.markdown("## Portfolio Risk Analytics")
+    
+    # Generate sample portfolio data
+    np.random.seed(42)
+    n_loans = 100
+    
+    portfolio_data = pd.DataFrame({
+        'loan_id': [f'LN{str(i).zfill(5)}' for i in range(1, n_loans + 1)],
+        'credit_score': np.random.normal(650, 100, n_loans).clip(300, 850).astype(int),
+        'loan_amount': np.random.normal(100000, 50000, n_loans).clip(10000, 500000),
+        'interest_rate': np.random.uniform(12, 25, n_loans),
+        'default_prob': np.random.beta(2, 10, n_loans)
+    })
+    
+    # Add risk category
+    portfolio_data['risk_category'] = portfolio_data['credit_score'].apply(get_risk_category)
+    
+    # Portfolio metrics
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("Total Loans", f"{n_loans:,}")
+    
+    with col2:
+        st.metric("Portfolio Value", format_currency(portfolio_data['loan_amount'].sum()))
+    
+    with col3:
+        avg_score = portfolio_data['credit_score'].mean()
+        st.metric("Avg Credit Score", f"{avg_score:.0f}")
+    
+    with col4:
+        expected_default = (portfolio_data['default_prob'] * portfolio_data['loan_amount']).sum()
+        st.metric("Expected Loss", format_currency(expected_default))
+    
+    st.markdown("---")
+    
+    # Distribution charts
+    chart_col1, chart_col2 = st.columns(2)
+    
+    with chart_col1:
+        st.markdown("### Credit Score Distribution")
+        fig_hist = px.histogram(
+            portfolio_data, 
+            x='credit_score', 
+            nbins=20,
+            color_discrete_sequence=['#1f77b4']
+        )
+        fig_hist.update_layout(showlegend=False)
+        st.plotly_chart(fig_hist, width="stretch")
+    
+    with chart_col2:
+        st.markdown("### Risk Category Breakdown")
+        risk_counts = portfolio_data['risk_category'].value_counts()
+        fig_pie = px.pie(
+            values=risk_counts.values, 
+            names=risk_counts.index,
+            color=risk_counts.index,
+            color_discrete_map={
+                "Low Risk": "#28a745",
+                "Medium Risk": "#ffc107",
+                "High Risk": "#fd7e14",
+                "Very High Risk": "#dc3545"
+            }
+        )
+        st.plotly_chart(fig_pie, width="stretch")
+    
+    st.markdown("---")
+    
+    # VaR Analysis
+    st.markdown("### Value at Risk (VaR) Analysis")
+    
+    # Simulate daily returns
+    daily_returns = np.random.normal(0.0005, 0.02, 252)  # 1 year of daily returns
+    
+    var_95 = calculate_var(daily_returns, 0.95)
+    var_99 = calculate_var(daily_returns, 0.99)
+    
+    var_col1, var_col2 = st.columns(2)
+    
+    with var_col1:
+        st.metric("VaR (95%)", f"{var_95:.2%}", help="Maximum expected loss at 95% confidence")
+    
+    with var_col2:
+        st.metric("VaR (99%)", f"{var_99:.2%}", help="Maximum expected loss at 99% confidence")
+    
+    # Returns distribution
+    fig_returns = px.histogram(
+        x=daily_returns, 
+        nbins=50,
+        title="Portfolio Returns Distribution",
+        labels={'x': 'Daily Returns', 'y': 'Frequency'},
+        color_discrete_sequence=['#1f77b4']
+    )
+    fig_returns.add_vline(x=var_95, line_dash="dash", line_color="orange", annotation_text="VaR 95%")
+    fig_returns.add_vline(x=var_99, line_dash="dash", line_color="red", annotation_text="VaR 99%")
+    st.plotly_chart(fig_returns, width="stretch")
+    
+    st.markdown("---")
+    
+    # Correlation matrix
+    st.markdown("### Feature Correlation Analysis")
+    
+    correlation_data = portfolio_data[['credit_score', 'loan_amount', 'interest_rate', 'default_prob']].corr()
+    
+    fig_corr = px.imshow(
+        correlation_data,
+        text_auto='.2f',
+        color_continuous_scale='RdBu_r',
+        aspect='auto'
+    )
+    fig_corr.update_layout(title="Correlation Matrix")
+    st.plotly_chart(fig_corr, width="stretch")
+    
+    st.markdown("---")
+    
+    # Portfolio data table
+    st.markdown("### Portfolio Data")
+    st.dataframe(portfolio_data.head(20), width="stretch")
+
+elif page == "About":
+    st.markdown("## About KenyaCredit AI")
+    
+    st.markdown("""
+    ### Project Overview
+    
+    KenyaCredit AI is an innovative credit scoring system designed to expand financial 
+    inclusion for underbanked populations in Kenya. By combining traditional financial 
+    metrics with alternative data sources, we can provide more accurate credit assessments 
+    for individuals who lack traditional credit histories.
+    
+    ### Key Features
+    
+    - **Alternative Data Integration**: Incorporates social media sentiment, Google Trends 
+      data, and news sentiment analysis
+    - **Machine Learning**: Uses Random Forest models for robust credit risk prediction
+    - **Portfolio Analytics**: Comprehensive risk metrics including VaR and correlation analysis
+    - **Real-time Processing**: Fast credit assessment with immediate results
+    
+    ### Technology Stack
+    
+    - **Machine Learning**: scikit-learn, Random Forest Classifier
+    - **NLP**: TextBlob for sentiment analysis, TF-IDF vectorization
+    - **Data Sources**: Google Trends (pytrends), News APIs, Social Media
+    - **Frontend**: Streamlit for interactive dashboard
+    - **Data Processing**: pandas, numpy
+    - **Visualization**: Plotly, Matplotlib
+    
+    ### MSCFE Modules Demonstrated
+    
+    | Module | Topic | Implementation |
+    |--------|-------|----------------|
+    | M1 | Credit Risk | Default probability modeling, credit scoring |
+    | M2 | Return & Volatility | Portfolio return analysis |
+    | M3 | Portfolio Theory | Correlation analysis, diversification |
+    | M4 | Alternative Data | TF-IDF, social media integration |
+    | M5 | News Sentiment | NLP-based news analysis |
+    | M7 | Ethics | Fair lending considerations |
+    
+    ### Author
+    
+    **Peterson Mutegi**  
+    MSCFE Student | Financial Engineering & Alternative Data
+    
+    - [LinkedIn](https://www.linkedin.com/in/peterson-muriuki)
+    - [GitHub](https://github.com/Peterson-Muriuki)
+    
+    ### Disclaimer
+    
+    This is a demonstration project for educational purposes. The credit scores and 
+    recommendations provided are based on simulated data and should not be used for 
+    actual lending decisions.
+    """)
